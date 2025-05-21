@@ -1,6 +1,6 @@
 import os
 import uuid
-from flask import Blueprint, redirect, request, session, url_for, current_app, render_template_string
+from flask import Blueprint, redirect, request, session, url_for, current_app, render_template_string,  jsonify
 import msal
 import requests
 from urllib.parse import urljoin
@@ -111,6 +111,13 @@ def authorized():
         return "Error: whatsapp_id missing in session.", 500
 
     session["user"] = result.get("id_token_claims")
+    
+    # Armazene o mapeamento entre whatsapp_id e session_id
+    from src.main import whatsapp_session_map
+    session_id = request.cookies.get(app.config.get("SESSION_COOKIE_NAME", "session"))
+    if session_id and whatsapp_id:
+        whatsapp_session_map[whatsapp_id] = session_id
+        current_app.logger.info(f"Mapped whatsapp_id {whatsapp_id} to session_id {session_id}")
 
     webhook_payload = {
         "whatsapp_id": whatsapp_id,
@@ -188,3 +195,30 @@ def logout():
         return redirect(logout_url)
     else:
         return redirect(post_logout_uri)
+
+
+@auth_bp.route("/api/logout", methods=["POST"])
+def api_logout():
+    data = request.json
+    if not data or "whatsapp_id" not in data:
+        current_app.logger.error("whatsapp_id parameter is missing in logout request")
+        return jsonify({"status": "error", "message": "whatsapp_id is required"}), 400
+    
+    whatsapp_id = data["whatsapp_id"]
+    current_app.logger.info(f"API logout requested for whatsapp_id: {whatsapp_id}")
+    
+    # Invalidar a sessão específica
+    from src.main import invalidate_session_by_whatsapp_id
+    success = invalidate_session_by_whatsapp_id(whatsapp_id)
+    
+    if success:
+        return jsonify({
+            "status": "success", 
+            "message": f"Session invalidated for {whatsapp_id}"
+        })
+    else:
+        return jsonify({
+            "status": "warning", 
+            "message": f"No active session found for {whatsapp_id}"
+        })
+
