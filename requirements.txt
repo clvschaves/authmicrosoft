@@ -6,3 +6,4 @@ cryptography==36.0.2
 msal==1.28.0
 requests==2.32.3
 python-dotenv==1.0.1
+gunicorn==21.2.0
