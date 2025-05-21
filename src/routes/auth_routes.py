@@ -134,19 +134,43 @@ def authorized():
             current_app.logger.error(webhook_status)
     else:
         current_app.logger.warning(webhook_status)
-
     success_message_html = f"""
-    <!DOCTYPE html><html><head><title>Login Successful</title></head><body>
-        <h1>Login Successful!</h1>
-        <p>Hello {result.get('id_token_claims', {}).get('name', 'User')}.</p>
-        <p>WhatsApp ID: {whatsapp_id}</p>
-        <p>Microsoft User ID: {user_id_from_token}</p>
-        <p>Email: {result.get('id_token_claims', {}).get('preferred_username', 'N/A')}</p>
-        <p>You can now return to WhatsApp.</p><hr>
-        <p>Webhook Status: {webhook_status}</p>
-        <p><small>Data sent: {webhook_payload if webhook_url_env else 'N/A (WEBHOOK_URL not set)'}</small></p>
-    </body></html>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Login Successful</title>
+            <meta http-equiv="refresh" content="3;url=whatsapp://send?phone=5581999097466&text=Login%20realizado%20com%20sucesso!" />
+            <script type="text/javascript">
+                // Tenta redirecionar para o WhatsApp após 2 segundos
+                setTimeout(function()  {{
+                    window.location.href = "whatsapp://send?phone=5581999097466&text=Login%20realizado%20com%20sucesso!";
+                }}, 2000);
+            </script>
+        </head>
+        <body>
+            <h1>Login Successful!</h1>
+            <p>Hello {result.get('id_token_claims', {}).get('name', 'User')}.</p>
+            <p>Redirecionando para o WhatsApp em 3 segundos...</p>
+            <p>Se o redirecionamento não funcionar, <a href="whatsapp://send?phone=SEU_NUMERO_WHATSAPP">clique aqui para voltar ao WhatsApp</a>.</p>
+            <hr>
+            <p><small>Webhook Status: {webhook_status}</small></p>
+        </body>
+        </html>
     """
+        
+
+    # success_message_html = f"""
+    # <!DOCTYPE html><html><head><title>Login Successful</title></head><body>
+    #     <h1>Login Successful!</h1>
+    #     <p>Hello {result.get('id_token_claims', {}).get('name', 'User')}.</p>
+    #     <p>WhatsApp ID: {whatsapp_id}</p>
+    #     <p>Microsoft User ID: {user_id_from_token}</p>
+    #     <p>Email: {result.get('id_token_claims', {}).get('preferred_username', 'N/A')}</p>
+    #     <p>You can now return to WhatsApp.</p><hr>
+    #     <p>Webhook Status: {webhook_status}</p>
+    #     <p><small>Data sent: {webhook_payload if webhook_url_env else 'N/A (WEBHOOK_URL not set)'}</small></p>
+    # </body></html>
+    # """
     return render_template_string(success_message_html)
 
 @auth_bp.route("/logout")
