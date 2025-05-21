@@ -138,17 +138,17 @@ def authorized():
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Login Successful</title>
-            <meta http-equiv="refresh" content="3;url=whatsapp://send?phone=5581999097466&text=Login%20realizado%20com%20sucesso!" />
+            <title>Login efetuado com sucesso</title>
+            <meta http-equiv="refresh" content="3;url=whatsapp://send?phone={whatsapp_id}&text=Login%20realizado%20com%20sucesso!" />
             <script type="text/javascript">
                 // Tenta redirecionar para o WhatsApp após 2 segundos
                 setTimeout(function()  {{
-                    window.location.href = "whatsapp://send?phone=5581999097466&text=Login%20realizado%20com%20sucesso!";
+                    window.location.href = "whatsapp://send?phone={whatsapp_id}&text=Login%20realizado%20com%20sucesso!";
                 }}, 2000);
             </script>
         </head>
         <body>
-            <h1>Login Successful!</h1>
+            <h1>Login realizado com sucesso!</h1>
             <p>Hello {result.get('id_token_claims', {}).get('name', 'User')}.</p>
             <p>Redirecionando para o WhatsApp em 3 segundos...</p>
             <p>Se o redirecionamento não funcionar, <a href="whatsapp://send?phone=SEU_NUMERO_WHATSAPP">clique aqui para voltar ao WhatsApp</a>.</p>
