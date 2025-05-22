@@ -1,38 +1,36 @@
 import os
 import sys
 from dotenv import load_dotenv
-from flask import Flask, send_from_directory, render_template_string
-from flask_session import Session
-import redis
+load_dotenv()
 
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")) # Load .env file from project root
+#load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")) # Load .env file from project root
 
 from flask import Flask, send_from_directory, render_template_string
 # from src.models.user import db # Database not used in this auth-only app
 # from src.routes.user import user_bp # Default user routes not used
 from src.routes.auth_routes import auth_bp # Import our auth blueprint
 
-# Configuração do Redis
-redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
-redis_client = redis.from_url(redis_url, ssl_cert_reqs=None)
+# # Configuração do Redis
+# redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+# redis_client = redis.from_url(redis_url, ssl_cert_reqs=None)
 
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
 # Load SECRET_KEY from environment variable, with a default for safety (though user should set a strong one)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev_default_secret_key_please_change")
-app.config["SESSION_TYPE"] = "redis"
-app.config["SESSION_REDIS"] = redis_client
+# app.config["SESSION_TYPE"] = "redis"
+# app.config["SESSION_REDIS"] = redis_client
 app.config["SESSION_PERMANENT"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = 1200  # 20 minutos em segundos
-app.config["SESSION_USE_SIGNER"] = True
-app.config["SESSION_KEY_PREFIX"] = "flask_session:"
+#app.config["SESSION_USE_SIGNER"] = True
+#app.config["SESSION_KEY_PREFIX"] = "flask_session:"
 
 
 # Initialize gerenciador de sessão
-Session(app)
+#Session(app)
 
 # Dicionário para mapear os IDs do WhatsApp para os IDs do Microsoft
 microsoft_session_map = {}
@@ -47,17 +45,24 @@ app.register_blueprint(auth_bp, url_prefix="/auth")
 # with app.app_context():
 #     db.create_all()
 
+# Função simplificada para "invalidar" sessões
 def invalidate_session_by_whatsapp_id(whatsapp_id):
-    """
-    Invalidate the session for the given WhatsApp ID.
-    """
-    if whatsapp_id in microsoft_session_map:
-        session_id = microsoft_session_map[whatsapp_id]
-        #remover a sessão do Redis
-        redis_client.delete(f"flask_session:{session_id}")
-        #remover o mapeamento
-        whatsapp_session_map.pop(whatsapp_id, None) 
+    if whatsapp_id in whatsapp_session_map:
+        whatsapp_session_map.pop(whatsapp_id, None)
+        return True
     return False
+
+# def invalidate_session_by_whatsapp_id(whatsapp_id):
+#     """
+#     Invalidate the session for the given WhatsApp ID.
+#     """
+#     if whatsapp_id in microsoft_session_map:
+#         session_id = microsoft_session_map[whatsapp_id]
+#         #remover a sessão do Redis
+#         redis_client.delete(f"flask_session:{session_id}")
+#         #remover o mapeamento
+#         whatsapp_session_map.pop(whatsapp_id, None) 
+#     return False
 
 @app.route("/")
 @app.route("/index.html")
