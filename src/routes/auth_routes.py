@@ -210,6 +210,8 @@ def logout():
 
 @auth_bp.route("/api/logout", methods=["POST"])
 def api_logout():
+    import requests
+    
     data = request.json
     if not data or "whatsapp_id" not in data:
         current_app.logger.error("whatsapp_id parameter is missing in logout request")
@@ -218,18 +220,64 @@ def api_logout():
     whatsapp_id = data["whatsapp_id"]
     current_app.logger.info(f"API logout requested for whatsapp_id: {whatsapp_id}")
     
-    # Invalidar a sessão específica
-    from src.main import invalidate_session_by_whatsapp_id
-    success = invalidate_session_by_whatsapp_id(whatsapp_id)
+    # Invalidar a sessão específica no mapeamento interno
+    from src.main import whatsapp_session_map
+    user_info = None
+    success = False
     
-    if success:
-        return jsonify({
-            "status": "success", 
-            "message": f"Session invalidated for {whatsapp_id}"
-        })
-    else:
-        return jsonify({
-            "status": "warning", 
-            "message": f"No active session found for {whatsapp_id}"
-        })
+    if whatsapp_id in whatsapp_session_map:
+        user_info = whatsapp_session_map.pop(whatsapp_id, None)
+        success = True
+    
+    # Realizar logout silencioso da Microsoft
+    silent_logout_success = False
+    
+    try:
+        # Parâmetros para o logout silencioso
+        authority = os.getenv("AUTHORITY", "")
+        client_id = os.getenv("CLIENT_ID", "")
+        
+        # Construir URL de logout
+        logout_url = f"{authority}/oauth2/v2.0/logout?client_id={client_id}"
+        
+        # Fazer a requisição de logout em segundo plano
+        # Usamos timeout curto pois não precisamos esperar a resposta completa
+        response = requests.get(logout_url, timeout=1)
+        silent_logout_success = response.status_code < 400
+        
+        current_app.logger.info(f"Silent logout attempt: {silent_logout_success}")
+    except Exception as e:
+        current_app.logger.error(f"Error during silent logout: {str(e)}")
+    
+    return jsonify({
+        "status": "success" if success else "warning",
+        "message": f"Session mapping removed for {whatsapp_id}" if success else f"No active session mapping found for {whatsapp_id}",
+        "microsoft_logout": "attempted" if silent_logout_success else "failed"
+    })
+
+
+# @auth_bp.route("/api/logout", methods=["POST"])
+# def api_logout():
+#     data = request.json
+#     if not data or "whatsapp_id" not in data:
+#         current_app.logger.error("whatsapp_id parameter is missing in logout request")
+#         return jsonify({"status": "error", "message": "whatsapp_id is required"}), 400
+    
+#     whatsapp_id = data["whatsapp_id"]
+#     current_app.logger.info(f"API logout requested for whatsapp_id: {whatsapp_id}")
+    
+#     # Invalidar a sessão específica
+#     from src.main import invalidate_session_by_whatsapp_id
+#     success = invalidate_session_by_whatsapp_id(whatsapp_id)
+    
+#     if success:
+#         return jsonify({
+#             "status": "success", 
+#             "message": f"Session invalidated for {whatsapp_id}"
+#         })
+#     else:
+#         return jsonify({
+#             "status": "warning", 
+#             "message": f"No active session found for {whatsapp_id}"
+#         })
 
