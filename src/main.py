@@ -17,7 +17,7 @@ from src.routes.auth_routes import auth_bp # Import our auth blueprint
 
 # Configuração do Redis
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
-redis_client = redis.from_url(redis_url)
+redis_client = redis.from_url(redis_url, ssl_cert_reqs=None)
 
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
