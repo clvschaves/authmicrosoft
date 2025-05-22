@@ -33,7 +33,7 @@ app.config["PERMANENT_SESSION_LIFETIME"] = 1200  # 20 minutos em segundos
 #Session(app)
 
 # Dicionário para mapear os IDs do WhatsApp para os IDs do Microsoft
-microsoft_session_map = {}
+whatsapp_session_map = {}
 
 # Register the authentication blueprint
 app.register_blueprint(auth_bp, url_prefix="/auth")
