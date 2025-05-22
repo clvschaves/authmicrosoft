@@ -4,6 +4,7 @@ from flask import Blueprint, redirect, request, session, url_for, current_app, r
 import msal
 import requests
 from urllib.parse import urljoin
+import datetime
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth") # Blueprint prefix is /auth
 
@@ -113,11 +114,21 @@ def authorized():
     session["user"] = result.get("id_token_claims")
     
     # Armazene o mapeamento entre whatsapp_id e session_id
+    # Armazene o mapeamento entre whatsapp_id e informações de sessão
     from src.main import whatsapp_session_map
-    session_id = request.cookies.get(app.config.get("SESSION_COOKIE_NAME", "session"))
-    if session_id and whatsapp_id:
-        whatsapp_session_map[whatsapp_id] = session_id
-        current_app.logger.info(f"Mapped whatsapp_id {whatsapp_id} to session_id {session_id}")
+    if whatsapp_id:
+        whatsapp_session_map[whatsapp_id] = {
+            "user_id": user_id_from_token,
+            "login_time": datetime.datetime.now().isoformat(),
+            "active": True
+        }
+    current_app.logger.info(f"Mapped whatsapp_id {whatsapp_id} to user_id {user_id_from_token}")
+
+    # from src.main import whatsapp_session_map
+    # session_id = request.cookies.get(app.config.get("SESSION_COOKIE_NAME", "session"))
+    # if session_id and whatsapp_id:
+    #     whatsapp_session_map[whatsapp_id] = session_id
+    #     current_app.logger.info(f"Mapped whatsapp_id {whatsapp_id} to session_id {session_id}")
 
     webhook_payload = {
         "whatsapp_id": whatsapp_id,
